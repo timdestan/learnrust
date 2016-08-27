@@ -9,25 +9,28 @@ enum Expr {
 
 use Expr::*;
 
+fn maybe_simplify<F, G>(lhs: Expr, rhs: Expr, combine: F, rebuild: G) -> Expr
+    where F : Fn(i32, i32) -> Expr,
+          G : Fn(Box<Expr>, Box<Expr>) -> Expr {
+  match (lhs, rhs) {
+    (Lit(lv), Lit(rv)) => combine(lv, rv),
+    (le, re) => rebuild(Box::new(le), Box::new(re))
+  }
+}
+
 fn simplify(e: &Expr) -> Expr {
   match *e {
     Lit(l) => Lit(l),
     Var(ref s) => Var(s.clone()),
     Add(ref l, ref r) => {
-      let lhs = simplify(l);
-      let rhs = simplify(r);
-      match (lhs, rhs) {
-        (Lit(l), Lit(r)) => Lit(l + r),
-        (l, r) => Add(Box::new(l), Box::new(r))
-      }
+      maybe_simplify(simplify(l), simplify(r),
+                     |l, r| Lit(l + r),
+                     |l, r| Add(l, r))
     },
     Mult(ref l, ref r) => {
-      let lhs = simplify(l);
-      let rhs = simplify(r);
-      match (lhs, rhs) {
-        (Lit(l), Lit(r)) => Lit(l * r),
-        (l, r) => Mult(Box::new(l), Box::new(r))
-      }
+      maybe_simplify(simplify(l), simplify(r),
+                     |l, r| Lit(l * r),
+                     |l, r| Mult(l, r))
     }
   }
 }
