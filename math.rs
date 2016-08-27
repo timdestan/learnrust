@@ -9,11 +9,15 @@ enum Expr {
 
 use Expr::*;
 
-fn maybe_simplify<F, G>(lhs: Expr, rhs: Expr, combine: F, rebuild: G) -> Expr
+fn maybe_simplify_literals<F, G>(
+    lhs: Expr,
+    rhs: Expr,
+    combine_literals: F,
+    rebuild: G) -> Expr
     where F : Fn(i32, i32) -> Expr,
           G : Fn(Box<Expr>, Box<Expr>) -> Expr {
   match (lhs, rhs) {
-    (Lit(lv), Lit(rv)) => combine(lv, rv),
+    (Lit(lv), Lit(rv)) => combine_literals(lv, rv),
     (le, re) => rebuild(Box::new(le), Box::new(re))
   }
 }
@@ -23,14 +27,14 @@ fn simplify(e: &Expr) -> Expr {
     Lit(l) => Lit(l),
     Var(ref s) => Var(s.clone()),
     Add(ref l, ref r) => {
-      maybe_simplify(simplify(l), simplify(r),
-                     |l, r| Lit(l + r),
-                     |l, r| Add(l, r))
+      maybe_simplify_literals(simplify(l), simplify(r),
+                              |l, r| Lit(l + r),
+                              |l, r| Add(l, r))
     },
     Mult(ref l, ref r) => {
-      maybe_simplify(simplify(l), simplify(r),
-                     |l, r| Lit(l * r),
-                     |l, r| Mult(l, r))
+      maybe_simplify_literals(simplify(l), simplify(r),
+                              |l, r| Lit(l * r),
+                              |l, r| Mult(l, r))
     }
   }
 }
@@ -44,6 +48,20 @@ fn main() {
     Box::new(Mult(
       Box::new(Lit(4)),
       Box::new(Lit(5))
+    )),
+    Box::new(Var("x".to_string()))
+  ));
+  test_simplify(Add(
+    Box::new(Mult(
+      Box::new(Lit(3)),
+      Box::new(Lit(12))
+    )),
+    Box::new(Lit(14))
+  ));
+  test_simplify(Add(
+    Box::new(Mult(
+      Box::new(Var("y".to_string())),
+      Box::new(Var("z".to_string()))
     )),
     Box::new(Var("x".to_string()))
   ));
