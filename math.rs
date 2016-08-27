@@ -11,8 +11,8 @@ use Expr::*;
 fn simplify(e: &Expr) -> i32 {
   match *e {
     Lit(l) => l,
-    Add(ref l, ref r) => simplify(&*l) + simplify(&*r),
-    Mult(ref l, ref r) => simplify(&*l) * simplify(&*r)
+    Add(ref l, ref r) => simplify(l) + simplify(r),
+    Mult(ref l, ref r) => simplify(l) * simplify(r)
   }
 }
 
